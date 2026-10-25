@@ -1,0 +1,408 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Petualangan Harta Karun Halal</title>
+<style>
+:root{
+  --navy:#183b56;--blue:#247ba0;--gold:#ffca58;
+  --cream:#fff9e9;--green:#4f9d69;--red:#d9534f;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:system-ui,Arial,sans-serif;
+  background:linear-gradient(#b9e8ff,#fff2cf);
+  color:var(--navy);min-height:100vh;
+}
+header{
+  padding:22px 15px;text-align:center;color:white;
+  background:linear-gradient(135deg,#176b87,#4c9b73);
+  border-radius:0 0 28px 28px;
+}
+header h1{margin:0;font-size:clamp(23px,5vw,36px)}
+header p{margin:8px 0 0}
+main{width:min(900px,94%);margin:18px auto 40px}
+.panel{
+  background:rgba(255,255,255,.96);padding:20px;
+  border-radius:22px;margin:15px 0;
+  box-shadow:0 5px 18px #214b5c19;
+}
+h2{margin-top:0}
+button,input{font:inherit}
+button{
+  border:0;border-radius:13px;padding:12px 17px;
+  cursor:pointer;font-weight:750;transition:.18s;
+}
+button:hover:not(:disabled){transform:translateY(-2px)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.primary{background:var(--green);color:white}
+.gold{background:var(--gold);color:#49340c}
+.secondary{background:#e4f3fa;color:var(--navy)}
+.danger{background:#ffe2df;color:#8d2723}
+input{
+  width:100%;padding:12px;border:2px solid #d3e3e8;
+  border-radius:12px;margin:8px 0 14px;
+}
+.hidden{display:none!important}
+.stats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+  text-align:center;
+}
+.stat{background:#edf8ed;padding:12px;border-radius:14px}
+.stat b{display:block;font-size:23px}
+.map{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.level{
+  min-height:128px;text-align:left;color:var(--navy);
+  background:#eaf5ff;border:2px solid #d3e7f4;
+  display:flex;flex-direction:column;gap:5px;
+}
+.level .emoji{font-size:32px}
+.level.done{background:#e2f7dc;border-color:#8acb7d}
+.level.locked{background:#eee;color:#777}
+.level:last-child{grid-column:1/-1}
+.progress{
+  height:12px;background:#e7e7e7;border-radius:20px;
+  overflow:hidden;margin:12px 0;
+}
+#progressBar{height:100%;width:0;background:#56a66b;transition:width .3s}
+.tag{
+  display:inline-block;background:#fff0bd;border-radius:20px;
+  padding:5px 10px;font-size:13px;font-weight:700;
+}
+#question{font-size:20px;line-height:1.5}
+.answers{display:grid;gap:10px;margin:18px 0}
+.answer{
+  text-align:left;background:#edf5fa;color:var(--navy);
+  border:2px solid transparent;
+}
+.answer.correct{background:#d9f7dc;border-color:#4aaf60}
+.answer.wrong{background:#ffe0dc;border-color:#d9534f}
+#feedback{padding:12px;border-radius:12px;line-height:1.5}
+.good{background:#e0f6e3}
+.bad{background:#fff0dc}
+.avatar{
+  display:inline-block;font-size:42px;
+  animation:bounce 1.5s infinite ease-in-out;
+}
+@keyframes bounce{0%,100%{transform:translateY(0)}
+50%{transform:translateY(-7px)}}
+.treasure{font-size:64px;animation:pop .6s ease}
+@keyframes pop{0%{transform:scale(.2) rotate(-20deg)}
+70%{transform:scale(1.15)}100%{transform:scale(1)}}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;text-align:left;border-bottom:1px solid #e5e5e5}
+small,.muted{color:#637985}
+footer{text-align:center;padding:20px;color:#526f7b;font-size:13px}
+@media(max-width:480px){
+ .panel{padding:15px}
+ .map{gap:8px}
+ .level{padding:11px;min-height:120px}
+ .stats{gap:6px}
+ .stat{padding:9px 4px}
+ .stat b{font-size:20px}
+ #question{font-size:18px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div style="font-size:34px">🗺️ 🏝️ 💎</div>
+  <h1>Petualangan Harta Karun Halal</h1>
+  <p>Belajar PAI sambil berpetualang!</p>
+</header>
+
+<main>
+<section class="panel" id="home">
+  <h2>🌟 Selamat Datang, Penjelajah!</h2>
+  <p>
+    Peta rahasia membawamu menuju Harta Karun Halal.
+    Selesaikan lima wilayah, kumpulkan koin, dan buktikan
+    bahwa kamu penjelajah yang bijak!
+  </p>
+  <label for="playerName"><b>Siapa nama penjelajahmu?</b></label>
+  <input id="playerName" maxlength="24" placeholder="Masukkan nama atau nama panggilan">
+  <button class="primary" onclick="startGame()">🚀 Mulai Petualangan</button>
+  <button class="secondary" onclick="showLeaderboard()">🏆 Papan Peringkat</button>
+  <p class="muted"><small>Suara dapat diaktifkan setelah kamu mulai bermain.</small></p>
+</section>
+
+<section class="panel hidden" id="game">
+  <div class="stats">
+    <div class="stat">🪙 Koin<b id="score">0</b></div>
+    <div class="stat">❤️ Nyawa<b id="lives">3</b></div>
+    <div class="stat">⭐ Benar<b id="correctCount">0</b></div>
+  </div>
+  <div class="progress"><div id="progressBar"></div></div>
+  <p><span class="tag" id="levelTag">Level 1</span></p>
+  <h2 id="levelTitle">🏖️ Pantai Pengenalan</h2>
+  <p id="lesson"></p>
+  <div id="quiz">
+    <p class="muted" id="questionNumber"></p>
+    <div id="question"></div>
+    <div class="answers" id="answers"></div>
+    <div id="feedback" class="hidden" aria-live="polite"></div>
+    <button class="primary hidden" id="nextBtn" onclick="nextQuestion()">Lanjut ➜</button>
+  </div>
+  <div id="levelResult" class="hidden">
+    <div class="treasure">🎁</div>
+    <h2 id="resultTitle">Misi Selesai!</h2>
+    <p id="resultText"></p>
+    <button class="gold" id="continueBtn" onclick="continueGame()">Buka Peta Berikutnya 🗺️</button>
+    <button class="secondary" onclick="showMap()">Lihat Peta</button>
+  </div>
+  <button class="secondary" onclick="toggleSound()" id="soundBtn">🔊 Suara: Aktif</button>
+  <button class="danger" onclick="showMap()">Keluar ke Peta</button>
+</section>
+
+<section class="panel hidden" id="mapPanel">
+  <h2>🗺️ Peta Harta Karun</h2>
+  <p>Pilih wilayah yang sudah terbuka. Selesaikan misinya untuk membuka wilayah selanjutnya.</p>
+  <div class="map" id="map"></div>
+  <p><b>Skor saat ini: <span id="mapScore">0</span> koin</b></p>
+  <button class="secondary" onclick="showLeaderboard()">🏆 Papan Peringkat</button>
+  <button class="secondary" onclick="backHome()">🏠 Menu Utama</button>
+</section>
+
+<section class="panel hidden" id="leaderboardPanel">
+  <h2>🏆 Papan Peringkat Penjelajah</h2>
+  <p class="muted">Rekor tersimpan di browser/perangkat ini.</p>
+  <div id="leaderboard"></div>
+  <button class="secondary" onclick="showMap()">Kembali ke Peta</button>
+  <button class="secondary" onclick="backHome()">Menu Utama</button>
+</section>
+
+<section class="panel hidden" id="endPanel">
+  <div class="treasure">🏆</div>
+  <h2>Selamat, Penjelajah!</h2>
+  <p id="finalMessage"></p>
+  <button class="primary" onclick="showLeaderboard()">Lihat Peringkat</button>
+  <button class="secondary" onclick="backHome()">Main Lagi</button>
+</section>
+</main>
+<footer>Media Pembelajaran PAI · Halal dan Haram · Belajar dengan Gembira</footer>
+
+<script>
+const levels = [
+{
+ title:"Pantai Pengenalan",emoji:"🏖️",
+ lesson:"Halal adalah sesuatu yang dibolehkan menurut syariat Islam. Haram adalah sesuatu yang dilarang oleh syariat Islam. Seorang Muslim belajar memilih yang halal dan menjauhi yang haram.",
+ questions:[
+  {q:"Apa arti halal?",a:["Sesuatu yang dibolehkan oleh syariat","Sesuatu yang selalu mahal","Sesuatu yang dilarang"],c:0,e:"Halal berarti dibolehkan menurut syariat Islam."},
+  {q:"Apa yang sebaiknya dilakukan sebelum memilih makanan kemasan?",a:["Memilih berdasarkan warna saja","Memeriksa bahan dan informasi pada kemasan","Mengikuti pilihan teman tanpa memeriksa"],c:1,e:"Periksa komposisi, label halal, dan informasi produk."},
+  {q:"Mengapa kita perlu mempelajari halal dan haram?",a:["Agar bisa mengejek pilihan orang","Agar dapat memilih sesuai ajaran Islam","Agar semua makanan dianggap haram"],c:1,e:"Pengetahuan halal dan haram membantu kita mengambil keputusan yang baik."}
+ ]
+},
+{
+ title:"Hutan Makanan",emoji:"🌳",
+ lesson:"Islam mengajarkan umatnya untuk mengonsumsi makanan yang halal dan baik (tayyib). Contoh yang jelas haram dikonsumsi adalah daging babi dan darah yang mengalir. Jangan menebak status suatu produk hanya dari bentuknya.",
+ questions:[
+  {q:"Manakah yang jelas diharamkan untuk dimakan dalam ajaran Islam?",a:["Nasi putih","Buah pisang","Daging babi"],c:2,e:"Daging babi termasuk makanan yang diharamkan dalam Islam."},
+  {q:"Apa arti tayyib dalam ungkapan halal dan tayyib?",a:["Baik dan layak","Pasti berwarna hijau","Selalu berasal dari luar negeri"],c:0,e:"Tayyib berarti baik; makanan hendaknya juga aman dan layak dikonsumsi."},
+  {q:"Kamu menemukan makanan kemasan yang belum kamu kenal. Apa tindakan terbaik?",a:["Langsung memakannya","Memeriksa label dan bertanya kepada orang dewasa tepercaya","Menyimpulkan haram karena namanya asing"],c:1,e:"Periksa informasi produk dan mintalah bantuan orang dewasa bila ragu."}
+ ]
+},
+{
+ title:"Jembatan Bahan Makanan",emoji:"🌉",
+ lesson:"Status makanan tidak selalu dapat diketahui dari penampilannya. Bahan tambahan, cara pembuatan, dan informasi kehalalan dapat menjadi hal yang perlu diperiksa. Label halal resmi dapat membantu konsumen mengenali produk yang telah disertifikasi.",
+ questions:[
+  {q:"Apa yang sebaiknya diperiksa pada makanan kemasan?",a:["Hanya gambar di depan","Komposisi, informasi produk, dan label halal","Hanya harga termurah"],c:1,e:"Informasi komposisi dan label membantu kita memilih produk dengan cermat."},
+  {q:"Temanmu berkata semua permen pasti haram. Apakah pernyataan itu tepat?",a:["Ya, semua permen pasti haram","Tidak, statusnya perlu dilihat berdasarkan bahan dan prosesnya","Ya, karena permen rasanya manis"],c:1,e:"Tidak semua permen haram. Bahan dan prosesnya perlu diperhatikan."},
+  {q:"Jika status bahan suatu makanan tidak jelas, apa yang sebaiknya dilakukan?",a:["Mencari informasi tepercaya dan bertanya kepada orang yang memahami","Menyebarkan kabar bahwa produk itu haram","Mengabaikan semua informasi"],c:0,e:"Carilah informasi tepercaya; jangan memberi hukum tanpa dasar."}
+ ]
+},
+{
+ title:"Gua Pilihan Bijak",emoji:"🪨",
+ lesson:"Selain makanan, Islam melarang minuman yang memabukkan. Kita juga perlu bersikap jujur, tidak berlebihan, menjaga kebersihan, dan tidak merugikan orang lain saat memilih maupun berbagi makanan.",
+ questions:[
+  {q:"Bagaimana sikap kita terhadap minuman yang memabukkan?",a:["Mencobanya agar terkenal","Menjauhinya karena dilarang dalam Islam","Membagikannya kepada teman"],c:1,e:"Minuman yang memabukkan harus dijauhi."},
+  {q:"Kamu melihat teman membawa makanan dengan label halal yang jelas. Apa sikap yang baik?",a:["Menghormati pilihannya dan tidak mengejek","Memaksanya memilih makanan lain tanpa alasan","Membuang makanannya"],c:0,e:"Hormati orang lain dan sampaikan pendapat dengan santun."},
+  {q:"Kamu tidak sengaja membeli produk yang informasinya belum kamu pahami. Apa langkah bijak?",a:["Langsung menuduh penjual","Memeriksa informasi dan meminta bantuan orang dewasa","Membuat kabar sendiri di media sosial"],c:1,e:"Cari fakta dari sumber tepercaya sebelum mengambil kesimpulan."}
+ ]
+},
+{
+ title:"Istana Harta Karun",emoji:"🏰",
+ lesson:"Ujian terakhir! Ingat: pahami arti halal dan haram, pilih makanan yang halal dan baik, periksa informasi produk, jauhi yang jelas dilarang, dan bersikap jujur serta bijak.",
+ questions:[
+  {q:"Manakah pilihan yang menunjukkan perilaku bijak?",a:["Memeriksa label halal dan komposisi produk","Menyebarkan kabar tanpa bukti","Memilih makanan hanya dari iklannya"],c:0,e:"Periksa informasi dan gunakan sumber yang tepercaya."},
+  {q:"Apa yang harus dilakukan jika menemukan makanan yang jelas mengandung bahan haram?",a:["Tetap memakannya karena gratis","Menghindarinya sesuai ajaran Islam","Menyembunyikan informasi dari keluarga"],c:1,e:"Jauhi makanan yang jelas haram."},
+  {q:"Apa pesan utama petualangan ini?",a:["Semua produk asing pasti haram","Kita harus menebak status makanan","Belajar memilih yang halal dan baik dengan pengetahuan yang benar"],c:2,e:"Pilih yang halal dan baik, serta periksa informasi dengan bijak."}
+ ]
+}
+];
+
+let player="",score=0,lives=3,correctCount=0;
+let levelIndex=0,questionIndex=0,answered=false;
+let unlocked=1,completed=[],soundOn=true,audio=null;
+let sessionId=0;
+
+function el(id){return document.getElementById(id)}
+function hideAll(){
+ ["home","game","mapPanel","leaderboardPanel","endPanel"].forEach(id=>el(id).classList.add("hidden"));
+}
+function startGame(){
+ const name=el("playerName").value.trim();
+ if(!name){alert("Masukkan nama penjelajah terlebih dahulu!");return}
+ player=name;score=0;lives=3;correctCount=0;
+ levelIndex=0;questionIndex=0;unlocked=1;completed=[];
+ sessionId++;
+ hideAll();el("game").classList.remove("hidden");
+ updateStats();loadLevel();playTone(550,.12);
+}
+function updateStats(){
+ el("score").textContent=score;
+ el("lives").textContent="❤️".repeat(Math.max(0,lives))||"0";
+ el("correctCount").textContent=correctCount;
+ el("progressBar").style.width=(correctCount/15*100)+"%";
+}
+function loadLevel(){
+ const L=levels[levelIndex];
+ el("levelTag").textContent="Level "+(levelIndex+1)+" dari 5";
+ el("levelTitle").textContent=L.emoji+" "+L.title;
+ el("lesson").textContent=L.lesson;
+ el("quiz").classList.remove("hidden");
+ el("levelResult").classList.add("hidden");
+ questionIndex=0;loadQuestion();
+}
+function loadQuestion(){
+ answered=false;
+ const q=levels[levelIndex].questions[questionIndex];
+ el("questionNumber").textContent=
+  "Pertanyaan "+(questionIndex+1)+" dari "+levels[levelIndex].questions.length;
+ el("question").textContent=q.q;
+ el("answers").innerHTML="";
+ el("feedback").className="hidden";
+ el("nextBtn").classList.add("hidden");
+ q.a.forEach((answer,i)=>{
+  const b=document.createElement("button");
+  b.className="answer";b.textContent=String.fromCharCode(65+i)+". "+answer;
+  b.onclick=()=>chooseAnswer(i,b);
+  el("answers").appendChild(b);
+ });
+}
+function chooseAnswer(i,button){
+ if(answered)return;
+ answered=true;
+ const q=levels[levelIndex].questions[questionIndex];
+ const buttons=[...el("answers").children];
+ buttons.forEach((b,n)=>{
+  b.disabled=true;
+  if(n===q.c)b.classList.add("correct");
+ });
+ const f=el("feedback");
+ f.classList.remove("hidden");
+ if(i===q.c){
+  score+=10;correctCount++;
+  f.className="good";f.textContent="✅ Benar! +10 koin. "+q.e;
+  playTone(720,.15);
+ }else{
+  lives=Math.max(0,lives-1);
+  button.classList.add("wrong");
+  f.className="bad";f.textContent="💡 Belum tepat. "+q.e;
+  playTone(220,.22);
+ }
+ updateStats();
+ el("nextBtn").classList.remove("hidden");
+ el("nextBtn").textContent=
+  lives===0?"Lihat Hasil":questionIndex===2?"Selesaikan Level":"Pertanyaan Berikutnya ➜";
+}
+function nextQuestion(){
+ if(!answered)return;
+ if(lives===0){finishGame(false);return}
+ if(questionIndex<2){
+  questionIndex++;loadQuestion();
+ }else{
+  completed.push(levelIndex);
+  unlocked=Math.max(unlocked,Math.min(5,levelIndex+2));
+  el("quiz").classList.add("hidden");
+  el("levelResult").classList.remove("hidden");
+  el("resultTitle").textContent="🎉 Level "+(levelIndex+1)+" Selesai!";
+  el("resultText").textContent=
+   "Kamu menyelesaikan "+levels[levelIndex].title+
+   ". Skor saat ini: "+score+" koin. "+(levelIndex===4?
+   "Harta karun berhasil ditemukan!":"Wilayah berikutnya telah terbuka.");
+  el("continueBtn").textContent=levelIndex===4?"🏆 Lihat Hasil Akhir":"Lanjut ke Level Berikutnya ➜";
+  el("continueBtn").disabled=false;
+  playTone(850,.2);
+ }
+}
+function continueGame(){
+ if(levelIndex===4){finishGame(true);return}
+ levelIndex++;
+ loadLevel();updateStats();
+}
+function finishGame(won){
+ hideAll();el("endPanel").classList.remove("hidden");
+ el("finalMessage").textContent=
+  player+", kamu memperoleh "+score+" koin dan menjawab benar "+
+  correctCount+" dari 15 pertanyaan. "+
+  (won?"Kamu berhasil mencapai harta karun!":"Petualangan berakhir. Kamu bisa mencoba lagi untuk belajar lebih banyak.");
+ saveRecord();
+}
+function saveRecord(){
+ let board=[];
+ try{board=JSON.parse(localStorage.getItem("halalBoard")||"[]")}catch(e){}
+ board.push({name:player,score:score,correct:correctCount,date:new Date().toLocaleDateString("id-ID")});
+ board.sort((a,b)=>b.score-a.score||b.correct-a.correct);
+ board=board.slice(0,10);
+ try{localStorage.setItem("halalBoard",JSON.stringify(board))}catch(e){}
+}
+function showMap(){
+ hideAll();el("mapPanel").classList.remove("hidden");
+ el("mapScore").textContent=score;
+ el("map").innerHTML="";
+ levels.forEach((L,i)=>{
+  const b=document.createElement("button");
+  b.className="level";
+  if(completed.includes(i))b.classList.add("done");
+  if(i>=unlocked)b.classList.add("locked");
+  b.disabled=i>=unlocked;
+  const status=completed.includes(i)?"✅ Selesai":i<unlocked?"🔓 Terbuka":"🔒 Terkunci";
+  b.innerHTML='<span class="emoji">'+L.emoji+'</span><b>Level '+(i+1)+'</b><span>'+L.title+'</span><small>'+status+'</small>';
+  b.onclick=()=>{levelIndex=i;hideAll();el("game").classList.remove("hidden");loadLevel()};
+  el("map").appendChild(b);
+ });
+}
+function showLeaderboard(){
+ hideAll();el("leaderboardPanel").classList.remove("hidden");
+ let board=[];
+ try{board=JSON.parse(localStorage.getItem("halalBoard")||"[]")}catch(e){}
+ if(!board.length){el("leaderboard").innerHTML="<p>Belum ada rekor. Jadilah penjelajah pertama!</p>";return}
+ const table=document.createElement("table");
+ table.innerHTML="<thead><tr><th>Rank</th><th>Nama</th><th>Koin</th><th>Benar</th></tr></thead>";
+ const body=document.createElement("tbody");
+ board.forEach((r,i)=>{
+  const tr=document.createElement("tr");
+  [i+1,r.name,r.score,r.correct+"/15"].forEach(v=>{
+   const td=document.createElement("td");td.textContent=v;tr.appendChild(td);
+  });
+  body.appendChild(tr);
+ });
+ table.appendChild(body);el("leaderboard").replaceChildren(table);
+}
+function backHome(){hideAll();el("home").classList.remove("hidden")}
+function toggleSound(){
+ soundOn=!soundOn;
+ el("soundBtn").textContent=soundOn?"🔊 Suara: Aktif":"🔇 Suara: Mati";
+ if(soundOn)playTone(600,.1);
+}
+function playTone(freq,duration){
+ if(!soundOn)return;
+ try{
+  audio=audio||new (window.AudioContext||window.webkitAudioContext)();
+  if(audio.state==="suspended")audio.resume();
+  const osc=audio.createOscillator(),gain=audio.createGain();
+  osc.type="sine";osc.frequency.value=freq;
+  gain.gain.setValueAtTime(.12,audio.currentTime);
+  gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);
+  osc.connect(gain);gain.connect(audio.destination);
+  osc.start();osc.stop(audio.currentTime+duration);
+ }catch(e){}
+}
+</script>
+</body>
+</html>
